@@ -20,15 +20,20 @@ hotels = [
 @router.get("")
 def get_hotels(
         id: int | None = Query(None),
-        title: str | None = Query(None)
+        title: str | None = Query(None),
+        page: int | None = 0,
+        per_page: int | None = 3
 ):
-    _hotels = []
-    for hotel in hotels:
-        if id and hotel["id"] != id:
-            continue
-        if title and hotel["title"] != title:
-            continue
-        _hotels.append(hotel)
+    if page is not None and per_page is not None:
+        _hotels = hotels[page * per_page: page * per_page + per_page]
+    else:
+        _hotels = []
+        for hotel in hotels:
+            if id and hotel["id"] != id:
+                continue
+            if title and hotel["title"] != title:
+                continue
+            _hotels.append(hotel)
     return _hotels
 
 
