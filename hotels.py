@@ -1,8 +1,28 @@
 from fastapi import APIRouter, Query, Body
+
+from dependencies import PaginationDep
 from schemas.hotels import Hotel, HotelPATCH
 
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
+
+
+@router.get("")
+def get_hotels(
+        pagination: PaginationDep,
+        id: int | None = Query(None),
+        title: str | None = Query(None)
+):
+    _hotels = []
+    for hotel in hotels:
+        if id and hotel["id"] != id:
+            continue
+        if title and hotel["title"] != title:
+            continue
+        _hotels.append(hotel)
+    if pagination.page is not None and pagination.per_page is not None:
+        _hotels = hotels[(pagination.page - 1) * pagination.per_page:][:pagination.per_page]
+    return _hotels
 
 
 hotels = [
@@ -13,28 +33,8 @@ hotels = [
     {"id": 5, "title": "Sochi3", "name": "sochi3"},
     {"id": 6, "title": "Дубай4", "name": "дубай4"},
     {"id": 7, "title": "Sochi5", "name": "sochi5"},
-    {"id": 8, "title": "Дубай6", "name": "дубай6"},
+    {"id": 8, "title": "Дубай6", "name": "дубай6"}
 ]
-
-
-@router.get("")
-def get_hotels(
-        id: int | None = Query(None),
-        title: str | None = Query(None),
-        page: int | None = 0,
-        per_page: int | None = 3
-):
-    if page is not None and per_page is not None:
-        _hotels = hotels[page * per_page: page * per_page + per_page]
-    else:
-        _hotels = []
-        for hotel in hotels:
-            if id and hotel["id"] != id:
-                continue
-            if title and hotel["title"] != title:
-                continue
-            _hotels.append(hotel)
-    return _hotels
 
 
 @router.post("")
