@@ -14,7 +14,8 @@ router = APIRouter(prefix="/hotels", tags=["Hotels"])
 async def get_hotels(
         pagination: PaginationDep,
         id: int | None = Query(None),
-        title: str | None = Query(None)
+        title: str | None = Query(None),
+        location: str | None = Query(None)
 ):
     per_page = pagination.per_page or 5
     async with async_session_maker() as session:
@@ -22,7 +23,9 @@ async def get_hotels(
         if id:
             query = query.filter_by(id=id)
         if title:
-            query = query.filter_by(title=title)
+            query = query.filter(HotelsORM.title.like(f"%{title}%"))
+        if location:
+            query = query.filter(HotelsORM.location.like(f"%{location}%"))
         query = (
             query
             .limit(per_page)
@@ -33,18 +36,6 @@ async def get_hotels(
 
         hotels = result.scalars().all()
         return hotels
-
-
-# hotels = [
-#     {"id": 1, "title": "Sochi", "name": "sochi"},
-#     {"id": 2, "title": "Дубай", "name": "дубай"},
-#     {"id": 3, "title": "Sochi1", "name": "sochi1"},
-#     {"id": 4, "title": "Дубай2", "name": "дубай2"},
-#     {"id": 5, "title": "Sochi3", "name": "sochi3"},
-#     {"id": 6, "title": "Дубай4", "name": "дубай4"},
-#     {"id": 7, "title": "Sochi5", "name": "sochi5"},
-#     {"id": 8, "title": "Дубай6", "name": "дубай6"}
-# ]
 
 
 @router.post("")
