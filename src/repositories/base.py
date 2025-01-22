@@ -19,16 +19,21 @@ class BaseRepository:
         return result.scalars().one_or_none()
 
     async def add(self, data: BaseModel):
-        add_hotel_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
-        result = await self.session.execute(add_hotel_stmt)
+        add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
+        result = await self.session.execute(add_stmt)
         return result.scalars().one()
 
-    async def edit(self, data: BaseModel, **filter_by):
-        query = update(self.model).filter_by(**filter_by).values(**data.model_dump()).returning(self.model)
-        result = await self.session.execute(query)
+    async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by):
+        update_stmt = (
+            update(self.model)
+            .filter_by(**filter_by)
+            .values(**data.model_dump(exclude_unset=exclude_unset))
+            .returning(self.model)
+        )
+        result = await self.session.execute(update_stmt)
         return result.scalars().all()
 
     async def delete(self, **filter_by):
-        query = delete(self.model).filter_by(**filter_by).returning(self.model)
-        result = await self.session.execute(query)
+        delete_stmt = delete(self.model).filter_by(**filter_by).returning(self.model)
+        result = await self.session.execute(delete_stmt)
         return result.scalars().all()

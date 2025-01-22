@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Query, Body, HTTPException
-from sqlalchemy import insert, select, func
 
 from src.api.dependencies import PaginationDep
 from src.database import async_session_maker
-from src.models.hotels import HotelsORM
 from src.repositories.hotels import HotelsRepository
 from src.schemas.hotels import Hotel, HotelPATCH
 
@@ -55,7 +53,7 @@ async def replace_hotels(
         hotels = await HotelsRepository(session).edit(hotel_data, id=hotel_id)
         if not hotels:
             raise HTTPException(status_code=404, detail="Hotel not found")
-        if len(hotels):
+        if len(hotels) > 1:
             raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
         await session.commit()
 
@@ -63,18 +61,17 @@ async def replace_hotels(
 
 
 @router.patch("/{hotel_id}")
-def update_hotels(
+async def update_hotels(
         hotel_id: int,
         hotel_data: HotelPATCH
 ):
-    global hotels
-    for hotel in hotels:
-        if hotel["id"] != hotel_id:
-            continue
-        if hotel_data.title:
-            hotel["title"] = hotel_data.title
-        if hotel_data.name:
-            hotel["name"] = hotel_data.name
+    async with async_session_maker() as session:
+        hotels = await HotelsRepository(session).edit(hotel_data, exclude_unset=True, id=hotel_id)
+        if not hotels:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        if len(hotels) > 1:
+            raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
+        await session.commit()
     return {"status": "OK"}
 
 
@@ -84,7 +81,7 @@ async def delete_hotel(hotel_id: int):
         hotels = await HotelsRepository(session).delete(id=hotel_id)
         if not hotels:
             raise HTTPException(status_code=404, detail="Hotel not found")
-        if len(hotels):
+        if len(hotels) > 1:
             raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
         await session.commit()
     return {"status": "OK"}
