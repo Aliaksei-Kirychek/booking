@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query, Body, HTTPException
 from sqlalchemy import insert, select, func
 
 from src.api.dependencies import PaginationDep
@@ -46,14 +46,17 @@ async def create_hotel(
     return {"status": "OK", "data": hotel}
 
 
-@router.put("/{title}/{location}")
+@router.put("/{hotel_id}")
 async def replace_hotels(
-        title: str,
-        location: str,
+        hotel_id: int,
         hotel_data: Hotel
 ):
     async with async_session_maker() as session:
-        await HotelsRepository(session).edit(hotel_data, title=title, location=location)
+        hotels = await HotelsRepository(session).edit(hotel_data, id=hotel_id)
+        if not hotels:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        if len(hotels):
+            raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
         await session.commit()
 
     return {"status": "OK"}
@@ -75,9 +78,13 @@ def update_hotels(
     return {"status": "OK"}
 
 
-@router.delete("/{title}/{location}")
-async def delete_hotel(title: str, location: str):
+@router.delete("/{hotel_id}")
+async def delete_hotel(hotel_id: int):
     async with async_session_maker() as session:
-        await HotelsRepository(session).delete(title=title, location=location)
+        hotels = await HotelsRepository(session).delete(id=hotel_id)
+        if not hotels:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        if len(hotels):
+            raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
         await session.commit()
     return {"status": "OK"}
