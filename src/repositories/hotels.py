@@ -16,11 +16,11 @@ class HotelsRepository(BaseRepository):
             limit: int,
             offset: int
     ) -> list[Hotel]:
-        query = select(HotelsORM)
+        query = select(self.model)
         if title:
-            query = query.filter(func.lower(HotelsORM.title).like(f"%{title.lower()}%"))
+            query = query.filter(func.lower(self.model.title).like(f"%{title.lower()}%"))
         if location:
-            query = query.filter(func.lower(HotelsORM.location).like(f"%{location.lower()}%"))
+            query = query.filter(func.lower(self.model.location).like(f"%{location.lower()}%"))
         query = (
             query
             .limit(limit)
