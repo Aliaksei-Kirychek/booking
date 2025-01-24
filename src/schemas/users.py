@@ -16,6 +16,10 @@ class User(BaseModel):
     email: EmailStr
 
 
+class UserWithHashedPassword(User):
+    hashed_password: str
+
+
 class UserPATCH(BaseModel):
     email: str | None = Field(None)
     password: str | None = Field(None)
