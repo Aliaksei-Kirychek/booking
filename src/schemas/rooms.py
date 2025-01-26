@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class RoomAdd(BaseModel):
     title: str
-    description: str | None
+    description: str | None = Field(None)
     price: int
     quantity: int
 
