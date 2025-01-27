@@ -1,20 +1,24 @@
 from pydantic import BaseModel, Field
 
 
+class RoomAddResponse(BaseModel):
+    title: str
+    description: str | None = Field(None)
+    price: int
+    quantity: int
+    facilities_ids: list[int] | None = None
+
+
 class RoomAdd(BaseModel):
     title: str
     description: str | None = Field(None)
     price: int
     quantity: int
+    hotel_id: int
 
 
 class Room(RoomAdd):
     id: int
-    hotel_id: int
-
-
-class RoomAddExtendedHotelId(RoomAdd):
-    hotel_id: int
 
 
 class RoomPATCH(BaseModel):

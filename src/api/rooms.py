@@ -6,7 +6,8 @@ from src.api.dependencies import DBDep
 from src.database import async_session_maker
 from src.repositories.hotels import HotelsRepository
 from src.repositories.rooms import RoomsRepository
-from src.schemas.rooms import RoomPATCH, RoomAdd, RoomAddExtendedHotelId, RoomPATCHExtendedHotelId
+from src.schemas.facilities import RoomFacilityAdd
+from src.schemas.rooms import RoomPATCH, RoomAdd, RoomAddResponse, RoomPATCHExtendedHotelId
 
 router = APIRouter(prefix="/hotels", tags=["Rooms"])
 
@@ -43,25 +44,30 @@ async def get_room_by_id(
 async def create_room(
         db: DBDep,
         hotel_id: int,
-        room_data: RoomAdd = Body(openapi_examples={
+        room_data: RoomAddResponse = Body(openapi_examples={
             "1": {"summary": "single room", "value": {
                 "title": "single room",
                 "description": "Wonderful view from the window",
                 "price": 100,
-                "quantity": 5
+                "quantity": 5,
+                "facilities_ids": [1, 2]
             }},
             "2": {"summary": "double room", "value": {
                 "title": "double room",
                 "description": "Wonderful view from the window",
                 "price": 150,
-                "quantity": 3
+                "quantity": 3,
+                "facilities_ids": [2, 3, 4]
             }}})
 ):
-    room_data = RoomAddExtendedHotelId(**room_data.model_dump(), hotel_id=hotel_id)
+    _room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")
-    room = await db.rooms.add(room_data)
+    room = await db.rooms.add(_room_data)
+
+    rooms_facilities = [RoomFacilityAdd(room_id=room.id, facility_id=f_id) for f_id in room_data.facilities_ids]
+    await db.rooms_facilities.add_batch(rooms_facilities)
     await db.commit()
     return {"status": "OK", "data": room}
 
@@ -71,9 +77,9 @@ async def replace_room(
         db: DBDep,
         hotel_id: int,
         room_id: int,
-        room_data: RoomAdd
+        room_data: RoomAddResponse
 ):
-    room_data = RoomAddExtendedHotelId(**room_data.model_dump(), hotel_id=hotel_id)
+    room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")

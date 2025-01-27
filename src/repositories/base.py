@@ -30,6 +30,10 @@ class BaseRepository:
         result = await self.session.execute(add_stmt)
         return self.schema.model_validate(result.scalars().one(), from_attributes=True)
 
+    async def add_batch(self, data: list[BaseModel]):
+        add_batch_stmt = insert(self.model).values([item.model_dump() for item in data]).returning(self.model)
+        await self.session.execute(add_batch_stmt)
+
     async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by):
         update_stmt = (
             update(self.model)

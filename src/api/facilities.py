@@ -24,5 +24,5 @@ async def create_facility(
 
 
 @router.get("")
-async def get_all_facilities(db: DBDep):
+async def get_facilities(db: DBDep):
     return await db.facilities.get_all()
