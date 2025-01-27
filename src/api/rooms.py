@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Body, HTTPException
+from datetime import date
+
+from fastapi import APIRouter, Body, HTTPException, Query
 
 from src.api.dependencies import DBDep
 from src.database import async_session_maker
@@ -12,13 +14,15 @@ router = APIRouter(prefix="/hotels", tags=["Rooms"])
 @router.get("/{hotel_id}/rooms")
 async def get_rooms(
         db: DBDep,
-        hotel_id: int
+        hotel_id: int,
+        date_from: date = Query(example="2025-02-05"),
+        date_to: date = Query(example="2025-02-15")
 ):
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")
 
-    rooms = await db.rooms.get_all(hotel_id)
+    rooms = await db.rooms.get_filtered_by_time(hotel_id=hotel_id, date_from=date_from, date_to=date_to)
     return rooms
 
 
