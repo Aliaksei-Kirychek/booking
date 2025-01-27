@@ -44,7 +44,7 @@ class BaseRepository:
         result = await self.session.execute(update_stmt)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
-    async def delete(self, **filter_by):
-        delete_stmt = delete(self.model).filter_by(**filter_by).returning(self.model)
+    async def delete(self, *args, **filter_by):
+        delete_stmt = delete(self.model).filter(*args).filter_by(**filter_by).returning(self.model)
         result = await self.session.execute(delete_stmt)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]

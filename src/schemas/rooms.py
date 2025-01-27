@@ -21,12 +21,17 @@ class Room(RoomAdd):
     id: int
 
 
+class RoomPATCHResponse(BaseModel):
+    title: str | None = Field(None)
+    description: str | None = Field(None)
+    price: int | None = Field(None)
+    quantity: int | None = Field(None)
+    facilities_ids: list[int] | None = None
+
+
 class RoomPATCH(BaseModel):
     title: str | None = Field(None)
     description: str | None = Field(None)
     price: int | None = Field(None)
     quantity: int | None = Field(None)
-
-
-class RoomPATCHExtendedHotelId(RoomPATCH):
     hotel_id: int

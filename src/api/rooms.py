@@ -4,10 +4,11 @@ from fastapi import APIRouter, Body, HTTPException, Query
 
 from src.api.dependencies import DBDep
 from src.database import async_session_maker
+from src.models.facilities import RoomsFacilitiesORM
 from src.repositories.hotels import HotelsRepository
 from src.repositories.rooms import RoomsRepository
 from src.schemas.facilities import RoomFacilityAdd
-from src.schemas.rooms import RoomPATCH, RoomAdd, RoomAddResponse, RoomPATCHExtendedHotelId
+from src.schemas.rooms import RoomPATCH, RoomAdd, RoomAddResponse, RoomPATCHResponse
 
 router = APIRouter(prefix="/hotels", tags=["Rooms"])
 
@@ -79,17 +80,30 @@ async def replace_room(
         room_id: int,
         room_data: RoomAddResponse
 ):
-    room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
+    _room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")
 
-    room = await db.rooms.edit(room_data, id=room_id)
+    room = await db.rooms.edit(_room_data, id=room_id)
 
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
     if len(room) > 1:
         raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
+
+    current_rooms_facilities = await db.rooms_facilities.get_filtered(room_id=room[0].id)
+    current_facilities_ids = [room_facility.facility_id for room_facility in current_rooms_facilities]
+
+    for_delete = list(set(current_facilities_ids) - set(room_data.facilities_ids))
+    for_add = list(set(room_data.facilities_ids) - set(current_facilities_ids))
+
+    if for_delete:
+        await db.rooms_facilities.delete(RoomsFacilitiesORM.facility_id.in_(for_delete), room_id=room[0].id)
+    if for_add:
+        rooms_facilities = [RoomFacilityAdd(room_id=room[0].id, facility_id=f_id) for f_id in for_add]
+        await db.rooms_facilities.add_batch(rooms_facilities)
+
     await db.commit()
 
     return {"status": "OK"}
@@ -100,19 +114,32 @@ async def update_room(
         db: DBDep,
         hotel_id: int,
         room_id: int,
-        room_data: RoomPATCH
+        room_data: RoomPATCHResponse
 ):
-    room_data = RoomPATCHExtendedHotelId(**room_data.model_dump(exclude_unset=True), hotel_id=hotel_id)
+    _room_data = RoomPATCH(**room_data.model_dump(exclude_unset=True), hotel_id=hotel_id)
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")
 
-    room = await db.rooms.edit(room_data, exclude_unset=True, id=room_id)
+    room = await db.rooms.edit(_room_data, exclude_unset=True, id=room_id)
 
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
     if len(room) > 1:
         raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
+
+    if room_data.facilities_ids:
+        current_rooms_facilities = await db.rooms_facilities.get_filtered(room_id=room[0].id)
+        current_facilities_ids = [room_facility.facility_id for room_facility in current_rooms_facilities]
+
+        for_delete = list(set(current_facilities_ids) - set(room_data.facilities_ids))
+        for_add = list(set(room_data.facilities_ids) - set(current_facilities_ids))
+
+        if for_delete:
+            await db.rooms_facilities.delete(RoomsFacilitiesORM.facility_id.in_(for_delete), room_id=room[0].id)
+        if for_add:
+            rooms_facilities = [RoomFacilityAdd(room_id=room[0].id, facility_id=f_id) for f_id in for_add]
+            await db.rooms_facilities.add_batch(rooms_facilities)
     await db.commit()
 
     return {"status": "OK"}
