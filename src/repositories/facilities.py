@@ -2,17 +2,17 @@ from sqlalchemy import select, delete, insert
 
 from src.models.facilities import FacilitiesORM, RoomsFacilitiesORM
 from src.repositories.base import BaseRepository
-from src.schemas.facilities import Facility, RoomFacility
+from src.repositories.mappers.mappers import RoomFacilityDataMapper, FacilityDataMapper
 
 
 class FacilitiesRepository(BaseRepository):
     model = FacilitiesORM
-    schema = Facility
+    mapper = FacilityDataMapper
 
 
 class RoomsFacilitiesRepository(BaseRepository):
     model = RoomsFacilitiesORM
-    schema = RoomFacility
+    mapper = RoomFacilityDataMapper
 
     async def set_room_facilities(self, room_id, facilities_ids: list[int]):
         get_current_facilities = (
