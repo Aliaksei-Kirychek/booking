@@ -37,7 +37,7 @@ async def get_room_by_id(
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")
-    room = await db.rooms.get_one_or_none(id=room_id, hotel_id=hotel_id)
+    room = await db.rooms.get_room_by_id_with_facilities(room_id=room_id)
     return room
 
 
@@ -92,17 +92,7 @@ async def replace_room(
     if len(room) > 1:
         raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
 
-    current_rooms_facilities = await db.rooms_facilities.get_filtered(room_id=room[0].id)
-    current_facilities_ids = [room_facility.facility_id for room_facility in current_rooms_facilities]
-
-    for_delete = list(set(current_facilities_ids) - set(room_data.facilities_ids))
-    for_add = list(set(room_data.facilities_ids) - set(current_facilities_ids))
-
-    if for_delete:
-        await db.rooms_facilities.delete(RoomsFacilitiesORM.facility_id.in_(for_delete), room_id=room[0].id)
-    if for_add:
-        rooms_facilities = [RoomFacilityAdd(room_id=room[0].id, facility_id=f_id) for f_id in for_add]
-        await db.rooms_facilities.add_batch(rooms_facilities)
+    await db.rooms_facilities.set_room_facilities(room_id=room_id, facilities_ids=room_data.facilities_ids)
 
     await db.commit()
 
@@ -129,17 +119,7 @@ async def update_room(
         raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
 
     if room_data.facilities_ids:
-        current_rooms_facilities = await db.rooms_facilities.get_filtered(room_id=room[0].id)
-        current_facilities_ids = [room_facility.facility_id for room_facility in current_rooms_facilities]
-
-        for_delete = list(set(current_facilities_ids) - set(room_data.facilities_ids))
-        for_add = list(set(room_data.facilities_ids) - set(current_facilities_ids))
-
-        if for_delete:
-            await db.rooms_facilities.delete(RoomsFacilitiesORM.facility_id.in_(for_delete), room_id=room[0].id)
-        if for_add:
-            rooms_facilities = [RoomFacilityAdd(room_id=room[0].id, facility_id=f_id) for f_id in for_add]
-            await db.rooms_facilities.add_batch(rooms_facilities)
+        await db.rooms_facilities.set_room_facilities(room_id=room_id, facilities_ids=room_data.facilities_ids)
     await db.commit()
 
     return {"status": "OK"}
