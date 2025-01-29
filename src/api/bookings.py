@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, HTTPException
+from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep, UserIdDep
 from src.schemas.bookings import BookingAddRequest, BookingAdd, Booking
@@ -35,11 +36,13 @@ async def create_booking(
 
 
 @router.get("")
+@cache(expire=10)
 async def get_all_bookings(db: DBDep):
     return await db.bookings.get_all()
 
 
 @router.get("/me")
+@cache(expire=10)
 async def get_my_bookings(
         user_id: UserIdDep,
         db: DBDep
