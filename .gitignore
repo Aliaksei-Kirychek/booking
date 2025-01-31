@@ -1,5 +1,7 @@
 venv/
 
+static/
+
 .idea/
 
 .env
