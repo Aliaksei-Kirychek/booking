@@ -4,7 +4,7 @@ static/
 
 .idea/
 
-.env
+.env*
 
 *.pyc
 __pycache__/

@@ -19,8 +19,8 @@ router = APIRouter(prefix="/hotels", tags=["Rooms"])
 async def get_rooms(
         db: DBDep,
         hotel_id: int,
-        date_from: date = Query(example="2025-02-05"),
-        date_to: date = Query(example="2025-02-15")
+        date_from: date = Query(examples=["2025-02-05"]),
+        date_to: date = Query(examples=["2025-02-15"])
 ):
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
     if not hotel:
