@@ -1,5 +1,9 @@
 import json
 
+from unittest import mock
+
+mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f).start()
+
 import pytest
 from httpx import AsyncClient, ASGITransport
 
@@ -67,3 +71,21 @@ async def register_user(async_main, async_client):
             "password": "12345"
         }
     )
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def authenticate_async_client(register_user, async_client):
+    response = await async_client.post(
+        "auth/login",
+        json={
+            "email": "test_user@test.com",
+            "password": "12345"
+        }
+    )
+    assert response.status_code == 200
+    data = response.json()
+    access_token = data.get("access_token")
+
+    assert access_token
+    return access_token
+

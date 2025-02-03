@@ -22,7 +22,6 @@ async def test_booking_crud(db: DBManager):
     assert new_booking.room_id == booking.room_id
     assert new_booking.price == booking.price
 
-
     booking_data.date_to = date(year=2025, month=2, day=24)
     modified_booking = await db.bookings.edit(booking_data)
     assert len(modified_booking) == 1
