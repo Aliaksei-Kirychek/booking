@@ -30,7 +30,9 @@ async def create_booking(
 
     _booking_data = BookingAdd(user_id=user_id, price=room.price, **booking_data.model_dump())
 
-    booking: Booking = await db.bookings.add(_booking_data)
+    booking: Booking = await db.bookings.add_booking(_booking_data, hotel_id=room.hotel_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Room occupied")
     await db.commit()
     return {"status": "OK", "data": booking}
 
