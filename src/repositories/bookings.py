@@ -28,10 +28,9 @@ class BookingsRepository(BaseRepository):
             date_to=booking_data.date_to
         )
 
-        free_rooms_ids = await self.session.execute(rooms_ids_to_get)
-        free_rooms_ids = free_rooms_ids.scalars().all()
-        if not (booking_data.room_id in free_rooms_ids):
+        free_rooms_ids_res = await self.session.execute(rooms_ids_to_get)
+        free_rooms_ids = free_rooms_ids_res.scalars().all()
+        if booking_data.room_id in free_rooms_ids:
+            return await self.add(booking_data)
+        else:
             return None
-        add_stmt = insert(self.model).values(**booking_data.model_dump()).returning(self.model)
-        result = await self.session.execute(add_stmt)
-        return self.mapper.map_to_domain_entity(result.scalars().one())
