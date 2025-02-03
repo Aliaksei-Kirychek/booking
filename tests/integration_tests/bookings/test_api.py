@@ -1,10 +1,8 @@
 import pytest
 from httpx import AsyncClient
 
-from src.database import engine_null_pool, Base
-from src.models import BookingsORM
 from src.services.auth import AuthService
-from src.utils.db_manager import DBManager
+from tests.conftest import get_db_null_pool
 
 
 @pytest.mark.parametrize("room_id, date_from, date_to, status_code", [
@@ -40,11 +38,11 @@ async def test_add_booking(
         assert "data" in res
 
 
-@pytest.fixture(scope="session")
-async def delete_all_bookings(test_check_test_mode):
-    async with engine_null_pool.begin() as conn:
-        await conn.run_sync(BookingsORM.__table__.drop)
-        await conn.run_sync(BookingsORM.__table__.create)
+@pytest.fixture(scope="module")
+async def delete_all_bookings():
+    async for _db in get_db_null_pool():
+        await _db.bookings.delete()
+        await _db.commit()
 
 
 @pytest.mark.parametrize("room_id, date_from, date_to, status_code, count_bookings", [
