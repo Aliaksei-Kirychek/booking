@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select, insert
+from sqlalchemy import select
 
 from src.models.bookings import BookingsORM
 from src.repositories.base import BaseRepository

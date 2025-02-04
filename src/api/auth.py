@@ -38,10 +38,13 @@ async def register_user(
             }}
         })
 ):
-    hashed_password = AuthService().hashed_password(data.password)
-    new_user_data = UserAdd(email=data.email, hashed_password=hashed_password)
-    await db.users.add(new_user_data)
-    await db.commit()
+    try:
+        hashed_password = AuthService().hashed_password(data.password)
+        new_user_data = UserAdd(email=data.email, hashed_password=hashed_password)
+        await db.users.add(new_user_data)
+        await db.commit()
+    except:  # noqa: E722
+        raise HTTPException(status_code=400)
     return {"status": "OK"}
 
 
