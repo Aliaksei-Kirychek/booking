@@ -9,14 +9,16 @@ router = APIRouter(prefix="/auth", tags=["Авторизация и аутент
 
 @router.post("/login")
 async def login_user(
-        db: DBDep,
-        response: Response,
-        data: UserRequestAdd = Body(openapi_examples={
-            "1": {"summary": "example", "value": {
-                "email": "example@example.com",
-                "password": "12345"
-            }}
-        })
+    db: DBDep,
+    response: Response,
+    data: UserRequestAdd = Body(
+        openapi_examples={
+            "1": {
+                "summary": "example",
+                "value": {"email": "example@example.com", "password": "12345"},
+            }
+        }
+    ),
 ):
     user = await db.users.get_user_with_hashed_password(email=data.email)
     if not user:
@@ -30,13 +32,15 @@ async def login_user(
 
 @router.post("/register")
 async def register_user(
-        db: DBDep,
-        data: UserRequestAdd = Body(openapi_examples={
-            "1": {"summary": "example", "value": {
-                "email": "example@example.com",
-                "password": "12345"
-            }}
-        })
+    db: DBDep,
+    data: UserRequestAdd = Body(
+        openapi_examples={
+            "1": {
+                "summary": "example",
+                "value": {"email": "example@example.com", "password": "12345"},
+            }
+        }
+    ),
 ):
     try:
         hashed_password = AuthService().hashed_password(data.password)
@@ -55,9 +59,6 @@ async def logout(response: Response):
 
 
 @router.get("/me")
-async def get_me(
-        db: DBDep,
-        user_id: UserIdDep
-):
+async def get_me(db: DBDep, user_id: UserIdDep):
     user = await db.users.get_one_or_none(id=user_id)
     return user

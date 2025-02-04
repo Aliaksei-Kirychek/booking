@@ -1,13 +1,6 @@
-
-
 async def test_post_facilities(async_client):
     facility_data = "Internet"
-    response = await async_client.post(
-        "/facilities",
-        json={
-            "title": facility_data
-        }
-    )
+    response = await async_client.post("/facilities", json={"title": facility_data})
     res = response.json()
     assert response.status_code == 200
     assert isinstance(res, dict)

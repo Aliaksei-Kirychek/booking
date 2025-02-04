@@ -10,19 +10,20 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 @router.post("")
 async def create_booking(
-        db: DBDep,
-        user_id: UserIdDep,
-        booking_data: BookingAddRequest = Body(openapi_examples={
-            "1": {"summary": "single room", "value": {
-                "room_id": "6",
-                "date_from": "2025-01-27",
-                "date_to": "2025-01-30"
-            }},
-            "2": {"summary": "double room", "value": {
-                "room_id": "9",
-                "date_from": "2025-02-05",
-                "date_to": "2025-02-15"
-            }}})
+    db: DBDep,
+    user_id: UserIdDep,
+    booking_data: BookingAddRequest = Body(
+        openapi_examples={
+            "1": {
+                "summary": "single room",
+                "value": {"room_id": "6", "date_from": "2025-01-27", "date_to": "2025-01-30"},
+            },
+            "2": {
+                "summary": "double room",
+                "value": {"room_id": "9", "date_from": "2025-02-05", "date_to": "2025-02-15"},
+            },
+        }
+    ),
 ):
     room: Room = await db.rooms.get_one_or_none(id=booking_data.room_id)
     if not room:
@@ -45,8 +46,5 @@ async def get_all_bookings(db: DBDep):
 
 @router.get("/me")
 @cache(expire=10)
-async def get_my_bookings(
-        user_id: UserIdDep,
-        db: DBDep
-):
+async def get_my_bookings(user_id: UserIdDep, db: DBDep):
     return await db.bookings.get_filtered(user_id=user_id)

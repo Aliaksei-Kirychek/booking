@@ -12,7 +12,7 @@ from src.api.dependencies import get_db
 from src.config import settings
 from src.database import Base, engine_null_pool, async_session_maker_null_pool
 from src.main import app
-from src.models import * # noqa
+from src.models import *  # noqa
 from src.schemas.hotels import HotelAdd
 from src.schemas.rooms import RoomAdd
 from src.utils.db_manager import DBManager
@@ -59,31 +59,22 @@ async def async_main(test_check_test_mode):
 
 @pytest.fixture(scope="session")
 async def async_client() -> AsyncClient:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as async_client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as async_client:
         yield async_client
 
 
 @pytest.fixture(scope="session", autouse=True)
 async def register_user(async_main, async_client):
     await async_client.post(
-        "/auth/register",
-        json={
-            "email": "test_user@test.com",
-            "password": "12345"
-        }
+        "/auth/register", json={"email": "test_user@test.com", "password": "12345"}
     )
 
 
 @pytest.fixture(scope="session")
 async def authenticate_async_client(register_user, async_client):
-    await async_client.post(
-        "auth/login",
-        json={
-            "email": "test_user@test.com",
-            "password": "12345"
-        }
-    )
+    await async_client.post("auth/login", json={"email": "test_user@test.com", "password": "12345"})
 
     assert async_client.cookies["access_token"]
     yield async_client
-

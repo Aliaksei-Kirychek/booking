@@ -33,7 +33,9 @@ class BaseRepository:
         return self.mapper.map_to_domain_entity(result.scalars().one())
 
     async def add_batch(self, data: list[BaseModel]):
-        add_batch_stmt = insert(self.model).values([item.model_dump() for item in data]).returning(self.model)
+        add_batch_stmt = (
+            insert(self.model).values([item.model_dump() for item in data]).returning(self.model)
+        )
         await self.session.execute(add_batch_stmt)
 
     async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by):
