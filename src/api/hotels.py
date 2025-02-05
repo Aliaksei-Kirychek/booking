@@ -4,8 +4,10 @@ from fastapi import APIRouter, Query, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, DBDep
-from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException, HotelNotFoundHTTPException
-from src.schemas.hotels import HotelPATCH, HotelAdd
+from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException, HotelNotFoundHTTPException, \
+    HotelNotFoundException
+from src.schemas.hotels import HotelPatch, HotelAdd
+from src.services.hotels import HotelService
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
@@ -20,15 +22,13 @@ async def get_hotels(
     date_from: date = Query(examples=["2025-02-05"]),
     date_to: date = Query(examples=["2025-02-15"]),
 ):
-    per_page = pagination.per_page or 5
     try:
-        hotels = await db.hotels.get_filtered_by_time(
-            title,
-            location,
-            limit=per_page,
-            offset=per_page * (pagination.page - 1),
+        hotels = await HotelService(db).get_filtered_by_time(
+            pagination=pagination,
+            title=title,
+            location=location,
             date_from=date_from,
-            date_to=date_to,
+            date_to=date_to
         )
     except DateToLessThanDateFromException as ex:
         raise HTTPException(status_code=422, detail=ex.detail)
@@ -39,7 +39,7 @@ async def get_hotels(
 @cache(expire=10)
 async def get_hotel_by_id(hotel_id: int, db: DBDep):
     try:
-        hotel = await db.hotels.get_one(id=hotel_id)
+        hotel = await HotelService(db).get_hotel(hotel_id=hotel_id)
     except ObjectNotFoundException:
         raise HotelNotFoundHTTPException
     return hotel
@@ -61,40 +61,36 @@ async def create_hotel(
         }
     ),
 ):
-    hotel = await db.hotels.add(hotel_data)
-    await db.commit()
+    hotel = await HotelService(db).add_hotel(hotel_data)
     return {"status": "OK", "data": hotel}
 
 
 @router.put("/{hotel_id}")
 async def replace_hotels(db: DBDep, hotel_id: int, hotel_data: HotelAdd):
-    hotels = await db.hotels.edit(hotel_data, id=hotel_id)
-    if not hotels:
+    try:
+        await HotelService(db).edit_hotel(hotel_id=hotel_id, hotel_data=hotel_data)
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
-    if len(hotels) > 1:
-        raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
-    await db.commit()
-
     return {"status": "OK"}
 
 
 @router.patch("/{hotel_id}")
-async def update_hotels(db: DBDep, hotel_id: int, hotel_data: HotelPATCH):
-    hotels = await db.hotels.edit(hotel_data, exclude_unset=True, id=hotel_id)
-    if not hotels:
+async def update_hotels(db: DBDep, hotel_id: int, hotel_data: HotelPatch):
+    try:
+        await HotelService(db).edit_hotel(
+            hotel_id=hotel_id,
+            hotel_data=hotel_data,
+            exclude_unset=True
+        )
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
-    if len(hotels) > 1:
-        raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
-    await db.commit()
     return {"status": "OK"}
 
 
 @router.delete("/{hotel_id}")
 async def delete_hotel(db: DBDep, hotel_id: int):
-    hotels = await db.hotels.delete(id=hotel_id)
-    if not hotels:
+    try:
+        await HotelService(db).delete_hotel(hotel_id=hotel_id)
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
-    if len(hotels) > 1:
-        raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
-    await db.commit()
     return {"status": "OK"}

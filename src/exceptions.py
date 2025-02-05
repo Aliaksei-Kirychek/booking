@@ -35,12 +35,29 @@ def check_date_to_after_date_from(date_from: date, date_to: date) -> None:
         raise DateToLessThanDateFromException
 
 
+class HotelNotFoundException(BookingException):
+    detail = "Hotel not found"
+
+
+class RoomNotFoundException(BookingException):
+    detail = "Room not found"
+
+
+class IncorrectPasswordException(BookingException):
+    detail = "Incorrect password"
+
+
+class IncorrectEmailException(BookingException):
+    detail = "Incorrect email"
+
+
 class BookingHTTPException(HTTPException):
     status_code = 500
     detail = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(status_code=self.status_code, detail=self.detail)
+
 
 
 class HotelNotFoundHTTPException(BookingHTTPException):

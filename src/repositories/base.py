@@ -1,3 +1,4 @@
+import logging
 from typing import Sequence, Type
 
 from asyncpg import UniqueViolationError
@@ -46,9 +47,13 @@ class BaseRepository:
         try:
             result = await self.session.execute(add_stmt)
         except IntegrityError as ex:
+            logging.error(
+                f"Failed to add data to the database, input data = {data} type of exception: {type(ex.orig.__cause__)}"
+            )
             if isinstance(ex.orig.__cause__, UniqueViolationError):
                 raise DuplicateValueException from ex
             else:
+                logging.error(f"Unhandled error, type of exception: {type(ex.orig.__cause__)}")
                 raise ex
         return self.mapper.map_to_domain_entity(result.scalars().one())
 

@@ -4,10 +4,10 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep
-from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException, HotelNotFoundHTTPException, \
-    RoomNotFoundHTTPException
-from src.schemas.facilities import RoomFacilityAdd
-from src.schemas.rooms import RoomPATCH, RoomAdd, RoomAddResponse, RoomPATCHResponse
+from src.exceptions import DateToLessThanDateFromException, HotelNotFoundHTTPException, \
+    RoomNotFoundHTTPException, HotelNotFoundException, RoomNotFoundException
+from src.schemas.rooms import RoomAddResponse, RoomPATCHResponse
+from src.services.rooms import RoomService
 
 router = APIRouter(prefix="/hotels", tags=["Rooms"])
 
@@ -21,15 +21,13 @@ async def get_rooms(
     date_to: date = Query(examples=["2025-02-15"]),
 ):
     try:
-        await db.hotels.get_one(id=hotel_id)
-    except ObjectNotFoundException:
-        raise HotelNotFoundHTTPException
-    try:
-        rooms = await db.rooms.get_filtered_by_time(
+        rooms = await RoomService(db).get_filtered_by_time(
             hotel_id=hotel_id, date_from=date_from, date_to=date_to
         )
     except DateToLessThanDateFromException as ex:
         raise HTTPException(status_code=422, detail=ex.detail)
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
     return rooms
 
 
@@ -37,12 +35,10 @@ async def get_rooms(
 @cache(expire=10)
 async def get_room_by_id(db: DBDep, hotel_id: int, room_id: int):
     try:
-        await db.hotels.get_one(id=hotel_id)
-    except ObjectNotFoundException:
+        room = await RoomService(db).get_room(hotel_id=hotel_id, room_id=room_id)
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
-    try:
-        room = await db.rooms.get_room_by_id_with_facilities(room_id=room_id)
-    except ObjectNotFoundException:
+    except RoomNotFoundException:
         raise RoomNotFoundHTTPException
     return room
 
@@ -76,65 +72,42 @@ async def create_room(
         }
     ),
 ):
-    _room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
     try:
-        await db.hotels.get_one(id=hotel_id)
-    except ObjectNotFoundException:
+        room = await RoomService(db).add_room(hotel_id=hotel_id, room_data=room_data)
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
-    room = await db.rooms.add(_room_data)
-
-    rooms_facilities = [
-        RoomFacilityAdd(room_id=room.id, facility_id=f_id) for f_id in room_data.facilities_ids
-    ]
-    await db.rooms_facilities.add_batch(rooms_facilities)
-    await db.commit()
     return {"status": "OK", "data": room}
 
 
 @router.put("/{hotel_id}/rooms/{room_id}")
 async def replace_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddResponse):
-    _room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
     try:
-        await db.hotels.get_one(id=hotel_id)
-    except ObjectNotFoundException:
+        await RoomService(db).edit_room(
+            hotel_id=hotel_id,
+            room_id=room_id,
+            room_data=room_data,
+            exclude_unset=False
+        )
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
-
-    room = await db.rooms.edit(_room_data, id=room_id)
-
-    if not room:
+    except RoomNotFoundException:
         raise RoomNotFoundHTTPException
-    if len(room) > 1:
-        raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
-
-    await db.rooms_facilities.set_room_facilities(
-        room_id=room_id, facilities_ids=room_data.facilities_ids
-    )
-
-    await db.commit()
-
     return {"status": "OK"}
 
 
 @router.patch("/{hotel_id}/rooms/{room_id}")
 async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomPATCHResponse):
-    _room_data = RoomPATCH(**room_data.model_dump(exclude_unset=True), hotel_id=hotel_id)
     try:
-        await db.hotels.get_one(id=hotel_id)
-    except ObjectNotFoundException:
-        raise HotelNotFoundHTTPException
-
-    room = await db.rooms.edit(_room_data, exclude_unset=True, id=room_id)
-
-    if not room:
-        raise RoomNotFoundHTTPException
-    if len(room) > 1:
-        raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
-
-    if room_data.facilities_ids:
-        await db.rooms_facilities.set_room_facilities(
-            room_id=room_id, facilities_ids=room_data.facilities_ids
+        await RoomService(db).edit_room(
+            hotel_id=hotel_id,
+            room_id=room_id,
+            room_data=room_data,
+            exclude_unset=True
         )
-    await db.commit()
+    except HotelNotFoundException:
+        raise HotelNotFoundHTTPException
+    except RoomNotFoundException:
+        raise RoomNotFoundHTTPException
 
     return {"status": "OK"}
 
@@ -142,16 +115,13 @@ async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomPAT
 @router.delete("/{hotel_id}/rooms/{room_id}")
 async def delete_room(db: DBDep, hotel_id: int, room_id: int):
     try:
-        await db.hotels.get_one(id=hotel_id)
-    except ObjectNotFoundException:
+        await RoomService(db).delete_room(
+            hotel_id=hotel_id,
+            room_id=room_id
+        )
+    except HotelNotFoundException:
         raise HotelNotFoundHTTPException
-
-    room = await db.rooms.delete(id=room_id)
-
-    if not room:
+    except RoomNotFoundException:
         raise RoomNotFoundHTTPException
-    if len(room) > 1:
-        raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
-    await db.commit()
 
     return {"status": "OK"}

@@ -20,7 +20,6 @@ class RoomsRepository(BaseRepository):
     async def get_filtered_by_time(
         self, hotel_id: int, date_from: date, date_to: date
     ) -> list[RoomWithRels]:
-        check_date_to_after_date_from(date_from, date_to)
         rooms_ids_to_get = rooms_ids_from_booking(
             hotel_id=hotel_id, date_from=date_from, date_to=date_to
         )

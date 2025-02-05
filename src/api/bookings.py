@@ -2,9 +2,11 @@ from fastapi import APIRouter, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep, UserIdDep
-from src.exceptions import ObjectNotFoundException, AllRoomsAreBookedException, RoomNotFoundHTTPException
+from src.exceptions import ObjectNotFoundException, AllRoomsAreBookedException, RoomNotFoundHTTPException, \
+    RoomNotFoundException
 from src.schemas.bookings import BookingAddRequest, BookingAdd, Booking
 from src.schemas.rooms import Room
+from src.services.bookings import BookingService
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -27,27 +29,21 @@ async def create_booking(
     ),
 ):
     try:
-        room: Room = await db.rooms.get_one(id=booking_data.room_id)
-    except ObjectNotFoundException:
+        booking = await BookingService(db).add_booking(user_id=user_id, booking_data=booking_data)
+    except RoomNotFoundException:
         raise RoomNotFoundHTTPException
-
-    _booking_data = BookingAdd(user_id=user_id, price=room.price, **booking_data.model_dump())
-
-    try:
-        booking: Booking = await db.bookings.add_booking(_booking_data, hotel_id=room.hotel_id)
     except AllRoomsAreBookedException as ex:
         raise HTTPException(status_code=409, detail=ex.detail)
-    await db.commit()
     return {"status": "OK", "data": booking}
 
 
 @router.get("")
 @cache(expire=10)
 async def get_all_bookings(db: DBDep):
-    return await db.bookings.get_all()
+    return await BookingService(db).get_all_bookings()
 
 
 @router.get("/me")
 @cache(expire=10)
 async def get_my_bookings(user_id: UserIdDep, db: DBDep):
-    return await db.bookings.get_filtered(user_id=user_id)
+    return await BookingService(db).get_my_bookings(user_id=user_id)
