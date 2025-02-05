@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, DBDep
+from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException
 from src.schemas.hotels import HotelPATCH, HotelAdd
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
@@ -20,21 +21,26 @@ async def get_hotels(
     date_to: date = Query(examples=["2025-02-15"]),
 ):
     per_page = pagination.per_page or 5
-    return await db.hotels.get_filtered_by_time(
-        title,
-        location,
-        limit=per_page,
-        offset=per_page * (pagination.page - 1),
-        date_from=date_from,
-        date_to=date_to,
-    )
+    try:
+        hotels = await db.hotels.get_filtered_by_time(
+            title,
+            location,
+            limit=per_page,
+            offset=per_page * (pagination.page - 1),
+            date_from=date_from,
+            date_to=date_to,
+        )
+    except DateToLessThanDateFromException as ex:
+        raise HTTPException(status_code=422, detail=ex.detail)
+    return hotels
 
 
 @router.get("/{hotel_id}")
 @cache(expire=10)
 async def get_hotel_by_id(hotel_id: int, db: DBDep):
-    hotel = await db.hotels.get_one_or_none(id=hotel_id)
-    if hotel is None:
+    try:
+        hotel = await db.hotels.get_one(id=hotel_id)
+    except ObjectNotFoundException:
         raise HTTPException(status_code=404, detail="Hotel not found")
     return hotel
 

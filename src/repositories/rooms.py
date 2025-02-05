@@ -2,8 +2,10 @@ from datetime import date
 from typing import Type
 
 from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import joinedload
 
+from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException
 from src.models.rooms import RoomsORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import RoomDataMapper, RoomWithRelsDataMapper
@@ -18,6 +20,8 @@ class RoomsRepository(BaseRepository):
     async def get_filtered_by_time(
         self, hotel_id: int, date_from: date, date_to: date
     ) -> list[RoomWithRels]:
+        if date_to < date_from:
+            raise DateToLessThanDateFromException
         rooms_ids_to_get = rooms_ids_from_booking(
             hotel_id=hotel_id, date_from=date_from, date_to=date_to
         )
@@ -36,7 +40,8 @@ class RoomsRepository(BaseRepository):
     async def get_room_by_id_with_facilities(self, room_id: int) -> RoomWithRels | None:
         query = select(self.model).options(joinedload(self.model.facilities)).filter_by(id=room_id)
         result = await self.session.execute(query)
-        room = result.unique().scalars().one_or_none()
-        if room is None:
-            return room
+        try:
+            room = result.unique().scalars().one()
+        except NoResultFound:
+            raise ObjectNotFoundException
         return RoomWithRelsDataMapper.map_to_domain_entity(room)

@@ -2,6 +2,7 @@ from datetime import date
 
 from sqlalchemy import select
 
+from src.exceptions import AllRoomsAreBookedException
 from src.models.bookings import BookingsORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import BookingDataMapper
@@ -27,5 +28,4 @@ class BookingsRepository(BaseRepository):
         free_rooms_ids = free_rooms_ids_res.scalars().all()
         if booking_data.room_id in free_rooms_ids:
             return await self.add(booking_data)
-        else:
-            return None
+        raise AllRoomsAreBookedException

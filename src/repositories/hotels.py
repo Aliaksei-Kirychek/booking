@@ -3,6 +3,7 @@ from typing import Type, Sequence
 
 from sqlalchemy import select, func
 
+from src.exceptions import DateToLessThanDateFromException
 from src.models.hotels import HotelsORM
 from src.models.rooms import RoomsORM
 from src.repositories.base import BaseRepository
@@ -18,6 +19,8 @@ class HotelsRepository(BaseRepository):
     async def get_filtered_by_time(
         self, title: str, location: str, limit: int, offset: int, date_from: date, date_to: date
     ) -> list[Hotel]:
+        if date_to < date_from:
+            raise DateToLessThanDateFromException
         rooms_ids_to_get = rooms_ids_from_booking(date_from=date_from, date_to=date_to)
         hotels_ids = (
             select(RoomsORM.hotel_id)

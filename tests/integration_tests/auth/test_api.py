@@ -7,7 +7,7 @@ from httpx import AsyncClient
     [
         ("user_1@test.com", "12345", 200),
         ("user_2@test.com", "12345", 200),
-        ("user_1@test.com", "12345", 400),
+        ("user_1@test.com", "12345", 409),
         ("user_3test", "12345", 422),
     ],
 )
