@@ -5,8 +5,11 @@ from fastapi import HTTPException
 from passlib.context import CryptContext
 
 from src.config import settings
-from src.exceptions import IncorrectPasswordException, ObjectNotFoundException, IncorrectEmailException, \
-    DuplicateValueException
+from src.exceptions import (
+    IncorrectPasswordException,
+    ObjectNotFoundException,
+    IncorrectEmailException,
+)
 from src.schemas.users import UserRequestAdd, UserAdd, User
 from src.services.base import BaseService
 
@@ -39,10 +42,7 @@ class AuthService(BaseService):
         except jwt.exceptions.DecodeError:
             raise HTTPException(status_code=401, detail="Invalid access token")
 
-    async def login_user(
-            self,
-            data: UserRequestAdd
-    ) -> str:
+    async def login_user(self, data: UserRequestAdd) -> str:
         try:
             user = await self.db.users.get_user_with_hashed_password(email=data.email)
         except ObjectNotFoundException:
@@ -52,10 +52,7 @@ class AuthService(BaseService):
         access_token = self.create_access_token({"user_id": user.id})
         return access_token
 
-    async def register_user(
-            self,
-            data: UserRequestAdd
-    ) -> User:
+    async def register_user(self, data: UserRequestAdd) -> User:
         hashed_password = self.hashed_password(data.password)
         new_user_data = UserAdd(email=data.email, hashed_password=hashed_password)
         user = await self.db.users.add(new_user_data)

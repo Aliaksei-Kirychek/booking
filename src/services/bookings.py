@@ -4,11 +4,7 @@ from src.services.rooms import RoomService
 
 
 class BookingService(BaseService):
-    async def add_booking(
-            self,
-            user_id: int,
-            booking_data: BookingAddRequest
-    ) -> Booking:
+    async def add_booking(self, user_id: int, booking_data: BookingAddRequest) -> Booking:
         room = await RoomService(self.db).get_room_with_check(booking_data.room_id)
 
         _booking_data = BookingAdd(user_id=user_id, price=room.price, **booking_data.model_dump())

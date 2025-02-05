@@ -59,7 +59,6 @@ class BookingHTTPException(HTTPException):
         super().__init__(status_code=self.status_code, detail=self.detail)
 
 
-
 class HotelNotFoundHTTPException(BookingHTTPException):
     status_code = 404
     detail = "Hotel not found"

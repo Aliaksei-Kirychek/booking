@@ -1,5 +1,3 @@
-from typing import Type
-
 from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
@@ -7,9 +5,8 @@ from sqlalchemy.exc import NoResultFound
 from src.exceptions import ObjectNotFoundException
 from src.models.users import UsersORM
 from src.repositories.base import BaseRepository
-from src.repositories.mappers.base import DataMapper
 from src.repositories.mappers.mappers import UserDataMapper
-from src.schemas.users import UserWithHashedPassword, User
+from src.schemas.users import UserWithHashedPassword
 
 
 class UsersRepository(BaseRepository):

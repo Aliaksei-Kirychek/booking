@@ -69,7 +69,9 @@ class BaseRepository:
             else:
                 raise ex
 
-    async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> Sequence[SchemaType]:
+    async def edit(
+        self, data: BaseModel, exclude_unset: bool = False, **filter_by
+    ) -> Sequence[SchemaType]:
         update_stmt = (
             update(self.model)
             .filter_by(**filter_by)

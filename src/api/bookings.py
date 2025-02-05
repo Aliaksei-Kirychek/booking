@@ -2,10 +2,12 @@ from fastapi import APIRouter, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep, UserIdDep
-from src.exceptions import ObjectNotFoundException, AllRoomsAreBookedException, RoomNotFoundHTTPException, \
-    RoomNotFoundException
-from src.schemas.bookings import BookingAddRequest, BookingAdd, Booking
-from src.schemas.rooms import Room
+from src.exceptions import (
+    AllRoomsAreBookedException,
+    RoomNotFoundHTTPException,
+    RoomNotFoundException,
+)
+from src.schemas.bookings import BookingAddRequest
 from src.services.bookings import BookingService
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])

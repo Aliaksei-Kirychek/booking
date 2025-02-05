@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Body, HTTPException, Response
 
 from src.api.dependencies import UserIdDep, DBDep
-from src.exceptions import DuplicateValueException, IncorrectEmailException, IncorrectPasswordException
-from src.schemas.users import UserRequestAdd, UserAdd
+from src.exceptions import (
+    DuplicateValueException,
+    IncorrectEmailException,
+    IncorrectPasswordException,
+)
+from src.schemas.users import UserRequestAdd
 from src.services.auth import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Авторизация и аутентификация"])
@@ -46,7 +50,9 @@ async def register_user(
     try:
         await AuthService(db).register_user(data)
     except DuplicateValueException:
-        raise HTTPException(status_code=409, detail="User with this email was registered before try login")
+        raise HTTPException(
+            status_code=409, detail="User with this email was registered before try login"
+        )
     return {"status": "OK"}
 
 

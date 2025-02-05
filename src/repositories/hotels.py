@@ -3,7 +3,6 @@ from typing import Type
 
 from sqlalchemy import select, func
 
-from src.exceptions import check_date_to_after_date_from
 from src.models.hotels import HotelsORM
 from src.models.rooms import RoomsORM
 from src.repositories.base import BaseRepository

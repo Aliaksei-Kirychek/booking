@@ -1,7 +1,10 @@
 from datetime import date
 
-from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException, check_date_to_after_date_from, \
-    RoomNotFoundException
+from src.exceptions import (
+    ObjectNotFoundException,
+    check_date_to_after_date_from,
+    RoomNotFoundException,
+)
 from src.schemas.facilities import RoomFacilityAdd
 from src.schemas.rooms import Room, RoomAddResponse, RoomAdd, RoomPATCHResponse
 from src.services.base import BaseService
@@ -10,10 +13,10 @@ from src.services.hotels import HotelService
 
 class RoomService(BaseService):
     async def get_filtered_by_time(
-            self,
-            hotel_id: int,
-            date_from: date,
-            date_to: date,
+        self,
+        hotel_id: int,
+        date_from: date,
+        date_to: date,
     ) -> list[Room]:
         check_date_to_after_date_from(date_from, date_to)
 
@@ -39,11 +42,7 @@ class RoomService(BaseService):
             raise RoomNotFoundException
         return hotel
 
-    async def add_room(
-            self,
-            hotel_id: int,
-            room_data: RoomAddResponse
-    ) -> Room:
+    async def add_room(self, hotel_id: int, room_data: RoomAddResponse) -> Room:
         _room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
         await HotelService(self.db).get_hotel_with_check(hotel_id)
         room = await self.db.rooms.add(_room_data)
@@ -56,11 +55,11 @@ class RoomService(BaseService):
         return room
 
     async def edit_room(
-            self,
-            hotel_id: int,
-            room_id: int,
-            room_data: RoomAddResponse | RoomPATCHResponse,
-            exclude_unset: bool = False
+        self,
+        hotel_id: int,
+        room_id: int,
+        room_data: RoomAddResponse | RoomPATCHResponse,
+        exclude_unset: bool = False,
     ) -> Room:
         _room_data = RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
         await HotelService(self.db).get_hotel_with_check(hotel_id)
@@ -82,4 +81,3 @@ class RoomService(BaseService):
         rooms = await self.db.rooms.delete(id=room_id)
         await self.db.commit()
         return rooms[0]
-

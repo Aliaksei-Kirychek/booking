@@ -1,6 +1,10 @@
 from datetime import date
 
-from src.exceptions import check_date_to_after_date_from, ObjectNotFoundException, HotelNotFoundException
+from src.exceptions import (
+    check_date_to_after_date_from,
+    ObjectNotFoundException,
+    HotelNotFoundException,
+)
 from src.schemas.hotels import Hotel, HotelAdd, HotelPatch
 from src.services.base import BaseService
 
@@ -26,7 +30,7 @@ class HotelService(BaseService):
             date_to=date_to,
         )
         return hotels
-    
+
     async def get_hotel(self, hotel_id: int) -> Hotel:
         return await self.db.hotels.get_one(id=hotel_id)
 
@@ -36,17 +40,14 @@ class HotelService(BaseService):
         except ObjectNotFoundException:
             raise HotelNotFoundException
         return hotel
-    
+
     async def add_hotel(self, hotel_data: HotelAdd) -> Hotel:
         hotel = await self.db.hotels.add(hotel_data)
         await self.db.commit()
         return hotel
-    
+
     async def edit_hotel(
-            self,
-            hotel_id: int,
-            hotel_data: HotelAdd | HotelPatch,
-            exclude_unset: bool = False
+        self, hotel_id: int, hotel_data: HotelAdd | HotelPatch, exclude_unset: bool = False
     ) -> Hotel:
         await self.get_hotel_with_check(hotel_id)
         hotels = await self.db.hotels.edit(hotel_data, exclude_unset=exclude_unset, id=hotel_id)

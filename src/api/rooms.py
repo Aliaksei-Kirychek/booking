@@ -4,8 +4,13 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep
-from src.exceptions import DateToLessThanDateFromException, HotelNotFoundHTTPException, \
-    RoomNotFoundHTTPException, HotelNotFoundException, RoomNotFoundException
+from src.exceptions import (
+    DateToLessThanDateFromException,
+    HotelNotFoundHTTPException,
+    RoomNotFoundHTTPException,
+    HotelNotFoundException,
+    RoomNotFoundException,
+)
 from src.schemas.rooms import RoomAddResponse, RoomPATCHResponse
 from src.services.rooms import RoomService
 
@@ -83,10 +88,7 @@ async def create_room(
 async def replace_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddResponse):
     try:
         await RoomService(db).edit_room(
-            hotel_id=hotel_id,
-            room_id=room_id,
-            room_data=room_data,
-            exclude_unset=False
+            hotel_id=hotel_id, room_id=room_id, room_data=room_data, exclude_unset=False
         )
     except HotelNotFoundException:
         raise HotelNotFoundHTTPException
@@ -99,10 +101,7 @@ async def replace_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAd
 async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomPATCHResponse):
     try:
         await RoomService(db).edit_room(
-            hotel_id=hotel_id,
-            room_id=room_id,
-            room_data=room_data,
-            exclude_unset=True
+            hotel_id=hotel_id, room_id=room_id, room_data=room_data, exclude_unset=True
         )
     except HotelNotFoundException:
         raise HotelNotFoundHTTPException
@@ -115,10 +114,7 @@ async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomPAT
 @router.delete("/{hotel_id}/rooms/{room_id}")
 async def delete_room(db: DBDep, hotel_id: int, room_id: int):
     try:
-        await RoomService(db).delete_room(
-            hotel_id=hotel_id,
-            room_id=room_id
-        )
+        await RoomService(db).delete_room(hotel_id=hotel_id, room_id=room_id)
     except HotelNotFoundException:
         raise HotelNotFoundHTTPException
     except RoomNotFoundException:

@@ -4,8 +4,12 @@ from fastapi import APIRouter, Query, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, DBDep
-from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException, HotelNotFoundHTTPException, \
-    HotelNotFoundException
+from src.exceptions import (
+    DateToLessThanDateFromException,
+    ObjectNotFoundException,
+    HotelNotFoundHTTPException,
+    HotelNotFoundException,
+)
 from src.schemas.hotels import HotelPatch, HotelAdd
 from src.services.hotels import HotelService
 
@@ -28,7 +32,7 @@ async def get_hotels(
             title=title,
             location=location,
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
         )
     except DateToLessThanDateFromException as ex:
         raise HTTPException(status_code=422, detail=ex.detail)
@@ -78,9 +82,7 @@ async def replace_hotels(db: DBDep, hotel_id: int, hotel_data: HotelAdd):
 async def update_hotels(db: DBDep, hotel_id: int, hotel_data: HotelPatch):
     try:
         await HotelService(db).edit_hotel(
-            hotel_id=hotel_id,
-            hotel_data=hotel_data,
-            exclude_unset=True
+            hotel_id=hotel_id, hotel_data=hotel_data, exclude_unset=True
         )
     except HotelNotFoundException:
         raise HotelNotFoundHTTPException

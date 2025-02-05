@@ -3,10 +3,7 @@ from src.services.base import BaseService
 
 
 class FacilityService(BaseService):
-    async def add_facility(
-            self,
-            facilities_data: FacilityAdd
-    ) -> Facility:
+    async def add_facility(self, facilities_data: FacilityAdd) -> Facility:
         facility = await self.db.facilities.add(facilities_data)
         await self.db.commit()
         return facility

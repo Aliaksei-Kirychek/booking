@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import joinedload
 
-from src.exceptions import ObjectNotFoundException, check_date_to_after_date_from
+from src.exceptions import ObjectNotFoundException
 from src.models.rooms import RoomsORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import RoomDataMapper, RoomWithRelsDataMapper
