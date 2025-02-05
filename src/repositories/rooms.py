@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Type
 
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -11,7 +12,7 @@ from src.schemas.rooms import RoomWithRels
 
 
 class RoomsRepository(BaseRepository):
-    model = RoomsORM
+    model: Type[RoomsORM] = RoomsORM
     mapper = RoomDataMapper
 
     async def get_filtered_by_time(

@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Type, Sequence
 
 from sqlalchemy import select, func
 
@@ -11,7 +12,7 @@ from src.schemas.hotels import Hotel
 
 
 class HotelsRepository(BaseRepository):
-    model = HotelsORM
+    model: Type[HotelsORM] = HotelsORM
     mapper = HotelDataMapper
 
     async def get_filtered_by_time(

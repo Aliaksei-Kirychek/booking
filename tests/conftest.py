@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 import json
+from typing import AsyncGenerator
 
 from unittest import mock
 
@@ -23,13 +24,13 @@ def test_check_test_mode():
     assert settings.MODE == "TEST"
 
 
-async def get_db_null_pool():
+async def get_db_null_pool() -> AsyncGenerator[DBManager, None]:
     async with DBManager(session_factory=async_session_maker_null_pool) as db:
         yield db
 
 
 @pytest.fixture()
-async def db() -> DBManager:
+async def db() -> AsyncGenerator[DBManager, None]:
     async for db in get_db_null_pool():
         yield db
 
@@ -58,7 +59,7 @@ async def async_main(test_check_test_mode):
 
 
 @pytest.fixture(scope="session")
-async def async_client() -> AsyncClient:
+async def async_client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as async_client:
