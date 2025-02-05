@@ -1,5 +1,6 @@
 from typing import Sequence, Type
 
+from asyncpg import UniqueViolationError
 from pydantic import BaseModel
 from sqlalchemy import select, insert, delete, update
 from sqlalchemy.exc import NoResultFound, IntegrityError
@@ -44,8 +45,11 @@ class BaseRepository:
         add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         try:
             result = await self.session.execute(add_stmt)
-        except IntegrityError:
-            raise DuplicateValueException
+        except IntegrityError as ex:
+            if isinstance(ex.orig.__cause__, UniqueViolationError):
+                raise DuplicateValueException from ex
+            else:
+                raise ex
         return self.mapper.map_to_domain_entity(result.scalars().one())
 
     async def add_batch(self, data: Sequence[BaseModel]) -> None:
@@ -54,8 +58,11 @@ class BaseRepository:
         )
         try:
             await self.session.execute(add_batch_stmt)
-        except IntegrityError:
-            raise DuplicateValueException
+        except IntegrityError as ex:
+            if isinstance(ex.orig.__cause__, UniqueViolationError):
+                raise DuplicateValueException from ex
+            else:
+                raise ex
 
     async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> Sequence[SchemaType]:
         update_stmt = (

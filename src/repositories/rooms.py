@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import joinedload
 
-from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException
+from src.exceptions import ObjectNotFoundException, check_date_to_after_date_from
 from src.models.rooms import RoomsORM
 from src.repositories.base import BaseRepository
 from src.repositories.mappers.mappers import RoomDataMapper, RoomWithRelsDataMapper
@@ -20,8 +20,7 @@ class RoomsRepository(BaseRepository):
     async def get_filtered_by_time(
         self, hotel_id: int, date_from: date, date_to: date
     ) -> list[RoomWithRels]:
-        if date_to < date_from:
-            raise DateToLessThanDateFromException
+        check_date_to_after_date_from(date_from, date_to)
         rooms_ids_to_get = rooms_ids_from_booking(
             hotel_id=hotel_id, date_from=date_from, date_to=date_to
         )

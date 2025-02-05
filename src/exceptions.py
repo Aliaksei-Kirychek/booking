@@ -1,3 +1,6 @@
+from datetime import date
+
+from fastapi import HTTPException
 
 
 class BookingException(Exception):
@@ -25,3 +28,26 @@ class DuplicateEmailException(BookingException):
 
 class DateToLessThanDateFromException(BookingException):
     detail = "Date to less then date from"
+
+
+def check_date_to_after_date_from(date_from: date, date_to: date) -> None:
+    if date_to <= date_from:
+        raise DateToLessThanDateFromException
+
+
+class BookingHTTPException(HTTPException):
+    status_code = 500
+    detail = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(status_code=self.status_code, detail=self.detail)
+
+
+class HotelNotFoundHTTPException(BookingHTTPException):
+    status_code = 404
+    detail = "Hotel not found"
+
+
+class RoomNotFoundHTTPException(BookingHTTPException):
+    status_code = 404
+    detail = "Room not found"

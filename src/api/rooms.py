@@ -4,7 +4,8 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import DBDep
-from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException
+from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException, HotelNotFoundHTTPException, \
+    RoomNotFoundHTTPException
 from src.schemas.facilities import RoomFacilityAdd
 from src.schemas.rooms import RoomPATCH, RoomAdd, RoomAddResponse, RoomPATCHResponse
 
@@ -22,7 +23,7 @@ async def get_rooms(
     try:
         await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
     try:
         rooms = await db.rooms.get_filtered_by_time(
             hotel_id=hotel_id, date_from=date_from, date_to=date_to
@@ -38,11 +39,11 @@ async def get_room_by_id(db: DBDep, hotel_id: int, room_id: int):
     try:
         await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
     try:
         room = await db.rooms.get_room_by_id_with_facilities(room_id=room_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise RoomNotFoundHTTPException
     return room
 
 
@@ -79,7 +80,7 @@ async def create_room(
     try:
         await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
     room = await db.rooms.add(_room_data)
 
     rooms_facilities = [
@@ -96,12 +97,12 @@ async def replace_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAd
     try:
         await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
 
     room = await db.rooms.edit(_room_data, id=room_id)
 
     if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise RoomNotFoundHTTPException
     if len(room) > 1:
         raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
 
@@ -120,12 +121,12 @@ async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomPAT
     try:
         await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
 
     room = await db.rooms.edit(_room_data, exclude_unset=True, id=room_id)
 
     if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise RoomNotFoundHTTPException
     if len(room) > 1:
         raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
 
@@ -143,12 +144,12 @@ async def delete_room(db: DBDep, hotel_id: int, room_id: int):
     try:
         await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
 
     room = await db.rooms.delete(id=room_id)
 
     if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise RoomNotFoundHTTPException
     if len(room) > 1:
         raise HTTPException(status_code=400, detail="Multiple Rooms found with the same room_id")
     await db.commit()

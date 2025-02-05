@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, DBDep
-from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException
+from src.exceptions import DateToLessThanDateFromException, ObjectNotFoundException, HotelNotFoundHTTPException
 from src.schemas.hotels import HotelPATCH, HotelAdd
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
@@ -41,7 +41,7 @@ async def get_hotel_by_id(hotel_id: int, db: DBDep):
     try:
         hotel = await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
     return hotel
 
 
@@ -70,7 +70,7 @@ async def create_hotel(
 async def replace_hotels(db: DBDep, hotel_id: int, hotel_data: HotelAdd):
     hotels = await db.hotels.edit(hotel_data, id=hotel_id)
     if not hotels:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
     if len(hotels) > 1:
         raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
     await db.commit()
@@ -82,7 +82,7 @@ async def replace_hotels(db: DBDep, hotel_id: int, hotel_data: HotelAdd):
 async def update_hotels(db: DBDep, hotel_id: int, hotel_data: HotelPATCH):
     hotels = await db.hotels.edit(hotel_data, exclude_unset=True, id=hotel_id)
     if not hotels:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
     if len(hotels) > 1:
         raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
     await db.commit()
@@ -93,7 +93,7 @@ async def update_hotels(db: DBDep, hotel_id: int, hotel_data: HotelPATCH):
 async def delete_hotel(db: DBDep, hotel_id: int):
     hotels = await db.hotels.delete(id=hotel_id)
     if not hotels:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+        raise HotelNotFoundHTTPException
     if len(hotels) > 1:
         raise HTTPException(status_code=400, detail="Multiple hotels found with the same hotel_id")
     await db.commit()
