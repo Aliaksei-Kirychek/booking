@@ -1,15 +1,8 @@
 venv/
 
-static/
-
 .idea/
-
-.env*
 
 *.pyc
 __pycache__/
 
-*.log
-*.tmp
-
-my.md
+_course_helpers/
